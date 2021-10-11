@@ -6,7 +6,8 @@
 #### Providers
 | Name | Version |
 |------|---------|
-| azurerm | = 2.28.0 |
+| hashicorp/azurerm | >= 2.28.0 |
+| hashicorp/azuread | >= 2.6.0 |
 
 #### Usage
 Only the release number needs to be modified.
