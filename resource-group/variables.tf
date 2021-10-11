@@ -1,3 +1,3 @@
 variable "env" {}
 variable "tags" {}
-variable "rg_flat" {}
+variable "rg_spec" {}

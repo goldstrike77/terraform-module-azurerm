@@ -5,7 +5,7 @@ module "resource_group" {
   source  = "git::https://github.com/goldstrike77/terraform-module-azurerm.git//resource-group?ref=v0.1"
   env     = var.env
   tags    = var.tags
-  rg_flat = var.rg_flat
+  rg_spec = var.rg_spec
 }
 ```
 
@@ -30,7 +30,7 @@ variable "tags" {
     department  = "IS"
   }
 }
-variable "rg_flat" {
+variable "rg_spec" {
   default = {
     name = "rg-aks-prd-001"
   }
