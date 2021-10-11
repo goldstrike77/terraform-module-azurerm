@@ -1,3 +1,13 @@
+#### Requirements
+| Name | Version |
+|------|---------|
+| terraform | >= 0.13.5 |
+
+#### Providers
+| Name | Version |
+|------|---------|
+| azurerm | = 2.28.0 |
+
 #### Usage
 Only the release number needs to be modified.
 ```hcl
