@@ -2,7 +2,7 @@
 Only the release number needs to be modified.
 ```hcl
 module "resource_group" {
-  source  = "git::https://github.com/goldstrike77/terraform-module-azurerm/resource-group.git?ref=v0.1"
+  source  = "git::https://github.com/goldstrike77/terraform-module-azurerm.git//resource-group?ref=v0.1"
   env     = var.env
   tags    = var.tags
   rg_flat = var.rg_flat
