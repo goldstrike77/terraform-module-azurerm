@@ -1,11 +1,10 @@
 #### Usage
-Only the release number needs to be modified.
+The release number and dependency resource ID needs to be modified.
 ```hcl
-module "resource_group" {
-  source  = "git::https://github.com/goldstrike77/terraform-module-azurerm.git//resource-group?ref=v0.1"
-  env     = var.env
-  tags    = var.tags
-  rg_spec = var.rg_spec
+module "role_assignment" {
+  source      = "git::https://github.com/goldstrike77/terraform-module-azurerm.git//role-assignment?ref=v0.1"
+  role_spec   = var.rg_spec
+  resource_id = module.resource_group.resource_group_id
 }
 ```
 
@@ -16,17 +15,6 @@ variable "env" {
   default = {
     location     = "chinaeast2"
     subscription = "f55a9c04-d605-4b56-9e3b-9a4b4d8db8cc"
-  }
-}
-variable "tags" {
-  default = {
-    location    = "chinaeast2"
-    environment = "prd"
-    customer    = "Learn"
-    owner       = "Somebody"
-    email       = "somebody@mail.com"
-    title       = "Engineer"
-    department  = "IS"
   }
 }
 variable "rg_spec" {
