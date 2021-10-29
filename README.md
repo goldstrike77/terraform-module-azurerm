@@ -38,9 +38,8 @@ provider azurerm {
   subscription_id = var.env.subscription
 }
 ```
-
-```hcl
 #### variables.tf
+```hcl
 variable "env" {
   default = {
     subscription = "58334aac-c8aa-4295-99ef-0dcaa649dd8d"
