@@ -11,12 +11,6 @@ module "resource_group" {
 #### Variables
 There are some variables that can (Or needs to) be overridden:
 ```hcl
-variable "env" {
-  default = {
-    location     = "chinaeast2"
-    subscription = "f55a9c04-d605-4b56-9e3b-9a4b4d8db8cc"
-  }
-}
 variable "tags" {
   default = {
     location    = "chinaeast2"
