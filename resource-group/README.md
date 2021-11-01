@@ -11,6 +11,12 @@ module "resource_group" {
 #### Variables
 There are some variables that can (Or needs to) be overridden:
 ```hcl
+variable "env" {
+  default = {
+    subscription = "f55a9c04-d605-4b56-9e3b-9a4b4d8db8cc"
+  }
+}
+
 variable "tags" {
   default = {
     location    = "chinaeast2"
@@ -22,6 +28,7 @@ variable "tags" {
     department  = "IS"
   }
 }
+
 variable "res_spec" {
   default = {
     rg = [
@@ -41,12 +48,12 @@ variable "res_spec" {
             type = "group"
             name = ["infra","test"]
             role = "Owner"
-            },
-            {
-              type = "app"
-              name = ["azure-cli-2020-11-27-03-54-38","azure-cli-2021-10-08-09-44-48"]
-              role = "Contributor"
-            }
+          },
+          {
+            type = "app"
+            name = ["azure-cli-2020-11-27-03-54-38","azure-cli-2021-10-08-09-44-48"]
+            role = "Contributor"
+          }
         ]
       },
       {

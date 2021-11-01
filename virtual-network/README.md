@@ -1,8 +1,8 @@
 #### Usage
 Only the release number needs to be modified.
 ```hcl
-module "resource_group" {
-  source   = "git::https://github.com/goldstrike77/terraform-module-azurerm.git//resource-group?ref=v0.1"
+module "virtual_network" {
+  source   = "git::https://github.com/goldstrike77/terraform-module-azurerm.git//virtual-network?ref=v0.1"
   tags     = var.tags
   res_spec = var.res_spec
 }
@@ -14,7 +14,7 @@ There are some variables that can (Or needs to) be overridden:
 variable "tags" {
   default = {
     location    = "chinaeast2"
-    environment = "prd"
+    environment = "dmz"
     customer    = "Learn"
     owner       = "Somebody"
     email       = "somebody@mail.com"
@@ -22,40 +22,43 @@ variable "tags" {
     department  = "IS"
   }
 }
+
 variable "res_spec" {
   default = {
     rg = [
       {
-        name     = "rg-aks-prd-001"
+        name     = "rg-network-dmz-001"
         location = "chinaeast2"
         tags     = {
-          project = "test"
-        }
-        role_ass = [
-          {
-            type = "user"
-            name = ["user1@contoso.com","user2@contoso.com"]
-            role = "Reader"
-          },
-          {
-            type = "group"
-            name = ["infra","test"]
-            role = "Owner"
-            },
-            {
-              type = "app"
-              name = ["azure-cli-2020-11-27-03-54-38","azure-cli-2021-10-08-09-44-48"]
-              role = "Contributor"
-            }
-        ]
-      },
-      {
-        name     = "rg-aks-prd-002"
-        location = "chinanorth2"
-        tags     = {
-          project = "test"
+          project = "network"
         }
         role_ass = []
+      }
+    ]
+    vnet = [
+      {
+        name     = "vnet-dmz-chinaeast2-001"
+        location = "chinaeast2"
+        tags     = {}
+        cidr     = ["10.10.0.0/16","10.20.0.0/16"]
+        dns      = []
+        role_ass = []
+        peering  = [
+          {
+            remote_virtual_network_id    = "/subscriptions/f55a9c04-d605-4b56-9e3b-9a4b4d8db8cc/resourceGroups/rg-network-prd-001/providers/Microsoft.Network/virtualNetworks/vnet-prd-chinaeast2-001"
+            allow_virtual_network_access = true
+            allow_forwarded_traffic      = false
+            allow_gateway_transit        = false
+            use_remote_gateways          = false
+          },
+          {
+            remote_virtual_network_id    = "/subscriptions/f55a9c04-d605-4b56-9e3b-9a4b4d8db8cc/resourceGroups/rg-network-dev-001/providers/Microsoft.Network/virtualNetworks/vnet-dev-chinaeast2-001"
+            allow_virtual_network_access = true
+            allow_forwarded_traffic      = false
+            allow_gateway_transit        = false
+            use_remote_gateways          = false
+          }
+        ]
       }
     ]
   }
