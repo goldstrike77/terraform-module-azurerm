@@ -1,6 +1,6 @@
 # Manages a Resource Group.
 resource "azurerm_resource_group" "resource_group" {
-  for_each = { for s in var.res_spec.rg_spec : format("%s", s.name) => s }
+  for_each = { for s in var.res_spec.rg : format("%s", s.name) => s }
   name     = each.value.name
   location = each.value.location
   tags     = merge(var.tags,each.value.tags)
