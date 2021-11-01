@@ -1,2 +1,2 @@
 variable "tags" {}
-variable "rg_spec" {}
+variable "res_spec" {}
