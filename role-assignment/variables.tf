@@ -1,2 +1,2 @@
-variable "res_spec" {}
+variable "role_spec" {}
 variable "resource" {}
