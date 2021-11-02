@@ -28,3 +28,20 @@ module "role_assignment" {
   role_spec = local.role_flat
   resource  = { for i, subnet in azurerm_subnet.subnet: i => subnet.id }
 }
+
+# Associates a Network Security Group with a Subnet within a Virtual Network.
+module "subnet_network_security_group_association" {
+  count     = length(local.nsgr_flat) > 0 ? 1 : 0
+  source    = "/home/suzhetao/terraform_workspace/module/terraform-module-azurerm/network-security-group"
+  tags      = var.tags
+  res_spec  = var.res_spec
+  nsgr_flat = local.nsgr_flat
+  resource  = { for i, subnet in azurerm_subnet.subnet: i => subnet.id }
+}
+
+# Associates a Network Security Group with a Subnet within a Virtual Network.
+resource "azurerm_subnet_network_security_group_association" "subnet_network_security_group_association" {
+  for_each                  = length(local.nsgr_flat) > 0 ? [1] : []
+  subnet_id                 = azurerm_subnet.subnet[each.value.res_name].id
+  network_security_group_id = module.subnet_network_security_group_association[each.value.res_name].network_security_group_id
+}
