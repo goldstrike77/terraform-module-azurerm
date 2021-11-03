@@ -1,13 +1,13 @@
 # Manages a subnet.
 resource "azurerm_subnet" "subnet" {
-  for_each             = { for s in var.res_spec.subnet : format("%s", s.name) => s }
-  name                 = each.value.name
-  resource_group_name  = var.res_spec.rg[0].name
-  virtual_network_name = var.res_spec.vnet[0].name
-  address_prefixes     = each.value.subnet_prefixes
+  for_each = { for s in local.snet_flat : format("%s", s.snet_name) => s }
+  name = each.value.snet_name
+  resource_group_name = var.res_spec.rg[0].name
+  virtual_network_name = each.value.vnet_name
+  address_prefixes = each.value.address_prefixes
   enforce_private_link_endpoint_network_policies = lookup(each.value, "enforce_private_link_endpoint_network_policies", false)
   enforce_private_link_service_network_policies = lookup(each.value, "enforce_private_link_service_network_policies", false)
-  service_endpoints = lookup(each.value, "service_endpoints", null)
+  service_endpoints = lookup(each.value, "service_endpoints", [])
 
   dynamic "delegation" {
     for_each = length(each.value.service_delegation_name) == 0 ? [] : [1]
@@ -29,19 +29,38 @@ module "role_assignment" {
   resource  = { for i, subnet in azurerm_subnet.subnet: i => subnet.id }
 }
 
-# Associates a Network Security Group with a Subnet within a Virtual Network.
-module "subnet_network_security_group_association" {
-  count     = length(local.nsgr_flat) > 0 ? 1 : 0
-  source    = "/home/suzhetao/terraform_workspace/module/terraform-module-azurerm/network-security-group"
-  tags      = var.tags
-  res_spec  = var.res_spec
-  nsgr_flat = local.nsgr_flat
-  resource  = { for i, subnet in azurerm_subnet.subnet: i => subnet.id }
+# Manages a network security group that contains a list of network security rules.
+resource "azurerm_network_security_group" "network_security_group" {
+  for_each            = { for s in local.nsg_flat : format("%s", s.subnet_name) => s }
+  name                = "nsg-${each.value.subnet_name}"
+  resource_group_name = var.res_spec.rg[0].name
+  location            = each.value.location
+  tags                = merge(var.tags,each.value.tags)
+}
+
+# Manages a Network Security Rule.
+resource "azurerm_network_security_rule" "network_security_rule" {
+  for_each                     = { for s in local.nsgr_flat : format("%s", s.nsrg_name) => s }
+  resource_group_name          = var.res_spec.rg[0].name
+  network_security_group_name  = azurerm_network_security_group.network_security_group[each.value.subnet_name].name
+  name                         = each.value.nsrg_name
+  direction                    = each.value.direction
+  access                       = each.value.access
+  priority                     = each.value.priority
+  protocol                     = each.value.protocol
+  source_address_prefix        = lookup(each.value, "source_address_prefix", null)
+  source_address_prefixes      = lookup(each.value, "source_address_prefixes", null)
+  destination_address_prefix   = lookup(each.value, "destination_address_prefix", null)
+  destination_address_prefixes = lookup(each.value, "destination_address_prefixes", null)
+  source_port_range            = lookup(each.value, "source_port_range", null)
+  source_port_ranges           = lookup(each.value, "source_port_ranges", null)
+  destination_port_range       = lookup(each.value, "destination_port_range", null)
+  destination_port_ranges      = lookup(each.value, "destination_port_ranges", null)
 }
 
 # Associates a Network Security Group with a Subnet within a Virtual Network.
 resource "azurerm_subnet_network_security_group_association" "subnet_network_security_group_association" {
-  for_each                  = length(local.nsgr_flat) > 0 ? [1] : []
-  subnet_id                 = azurerm_subnet.subnet[each.value.res_name].id
-  network_security_group_id = module.subnet_network_security_group_association[each.value.res_name].network_security_group_id
+  for_each                  = { for s in local.nsg_flat : format("%s", s.subnet_name) => s }
+  subnet_id                 = azurerm_subnet.subnet[each.value.subnet_name].id
+  network_security_group_id = azurerm_network_security_group.network_security_group[each.value.subnet_name].id
 }
