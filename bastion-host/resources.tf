@@ -14,6 +14,7 @@ resource "azurerm_public_ip" "public_ip" {
   resource_group_name = var.res_spec.rg[0].name
   allocation_method = "Static"
   sku = "Standard"
+  availability_zone = "No-Zone"
   tags = merge(var.tags,each.value.tags)
 }
 

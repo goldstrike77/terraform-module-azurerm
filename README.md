@@ -16,8 +16,8 @@ export ARM_TENANT_ID="2b2af97b-542e-4860-a500-fb45adea87d9"
 #### Providers
 | Name | Version |
 |------|---------|
-| hashicorp/azurerm | >= 2.28.0 |
-| hashicorp/azuread | >= 2.6.0 |
+| hashicorp/azurerm | >= 2.83.0 |
+| hashicorp/azuread | >= 2.8.0 |
 
 #### provider.tf
 ```hcl
@@ -25,11 +25,11 @@ terraform {
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "2.28.0"
+      version = "2.83.0"
     }
     azuread = {
       source  = "hashicorp/azuread"
-      version = "2.6.0"
+      version = "2.8.0"
     }
   }
 }
