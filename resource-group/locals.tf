@@ -4,12 +4,12 @@ locals {
     for s in var.res_spec.rg[*] : [
       for t in s.role_ass[*] : [
         for u in t.name[*] : {
-          res_name  = s.name
-          tags      = s.tags
-          location  = s.location
-          type      = t.type
+          res_name = s.name
+          tags = s.tags
+          location = s.location
+          type = t.type
           role_name = u
-          role      = t.role
+          role = t.role
         }
       ]
     ] if length(s.role_ass[*]) > 0

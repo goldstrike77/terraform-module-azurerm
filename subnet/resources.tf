@@ -14,7 +14,7 @@ resource "azurerm_subnet" "subnet" {
     content {
       name = "delegation"
       service_delegation {
-        name    = each.value.service_delegation_name
+        name = each.value.service_delegation_name
         actions = ["Microsoft.Network/networkinterfaces/*","Microsoft.Network/virtualNetworks/subnets/action","Microsoft.Network/virtualNetworks/subnets/join/action","Microsoft.Network/virtualNetworks/subnets/prepareNetworkPolicies/action","Microsoft.Network/virtualNetworks/subnets/unprepareNetworkPolicies/action"]
       }
     }
@@ -23,44 +23,44 @@ resource "azurerm_subnet" "subnet" {
 
 # Assigns a given Principal (User, Group or App) to a given Role.
 module "role_assignment" {
-  count     = length(local.role_flat) > 0 ? 1 : 0
-  source    = "git::https://github.com/goldstrike77/terraform-module-azurerm.git//role-assignment?ref=v0.1"
+  count = length(local.role_flat) > 0 ? 1 : 0
+  source = "git::https://github.com/goldstrike77/terraform-module-azurerm.git//role-assignment?ref=v0.1"
   role_spec = local.role_flat
-  resource  = { for i, subnet in azurerm_subnet.subnet: i => subnet.id }
+  resource = { for i, subnet in azurerm_subnet.subnet: i => subnet.id }
 }
 
 # Manages a network security group that contains a list of network security rules.
 resource "azurerm_network_security_group" "network_security_group" {
-  for_each            = { for s in local.nsg_flat : format("%s", s.subnet_name) => s }
-  name                = "nsg-${each.value.subnet_name}"
+  for_each = { for s in local.nsg_flat : format("%s", s.subnet_name) => s }
+  name = "nsg-${each.value.subnet_name}"
   resource_group_name = var.res_spec.rg[0].name
-  location            = each.value.location
-  tags                = merge(var.tags,each.value.tags)
+  location = each.value.location
+  tags = merge(var.tags,each.value.tags)
 }
 
 # Manages a Network Security Rule.
 resource "azurerm_network_security_rule" "network_security_rule" {
-  for_each                     = { for s in local.nsgr_flat : format("%s", s.nsrg_name) => s }
-  resource_group_name          = var.res_spec.rg[0].name
-  network_security_group_name  = azurerm_network_security_group.network_security_group[each.value.subnet_name].name
-  name                         = each.value.nsrg_name
-  direction                    = each.value.direction
-  access                       = each.value.access
-  priority                     = each.value.priority
-  protocol                     = each.value.protocol
-  source_address_prefix        = lookup(each.value, "source_address_prefix", null)
-  source_address_prefixes      = lookup(each.value, "source_address_prefixes", null)
-  destination_address_prefix   = lookup(each.value, "destination_address_prefix", null)
+  for_each = { for s in local.nsgr_flat : format("%s", s.nsrg_name) => s }
+  resource_group_name = var.res_spec.rg[0].name
+  network_security_group_name = azurerm_network_security_group.network_security_group[each.value.subnet_name].name
+  name = each.value.nsrg_name
+  direction = each.value.direction
+  access = each.value.access
+  priority = each.value.priority
+  protocol = each.value.protocol
+  source_address_prefix = lookup(each.value, "source_address_prefix", null)
+  source_address_prefixes = lookup(each.value, "source_address_prefixes", null)
+  destination_address_prefix = lookup(each.value, "destination_address_prefix", null)
   destination_address_prefixes = lookup(each.value, "destination_address_prefixes", null)
-  source_port_range            = lookup(each.value, "source_port_range", null)
-  source_port_ranges           = lookup(each.value, "source_port_ranges", null)
-  destination_port_range       = lookup(each.value, "destination_port_range", null)
-  destination_port_ranges      = lookup(each.value, "destination_port_ranges", null)
+  source_port_range = lookup(each.value, "source_port_range", null)
+  source_port_ranges = lookup(each.value, "source_port_ranges", null)
+  destination_port_range = lookup(each.value, "destination_port_range", null)
+  destination_port_ranges = lookup(each.value, "destination_port_ranges", null)
 }
 
 # Associates a Network Security Group with a Subnet within a Virtual Network.
 resource "azurerm_subnet_network_security_group_association" "subnet_network_security_group_association" {
-  for_each                  = { for s in local.nsg_flat : format("%s", s.subnet_name) => s }
-  subnet_id                 = azurerm_subnet.subnet[each.value.subnet_name].id
+  for_each = { for s in local.nsg_flat : format("%s", s.subnet_name) => s }
+  subnet_id = azurerm_subnet.subnet[each.value.subnet_name].id
   network_security_group_id = azurerm_network_security_group.network_security_group[each.value.subnet_name].id
 }
