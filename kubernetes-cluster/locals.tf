@@ -12,15 +12,15 @@ locals {
         os_type = lookup(t, "os_type", "Linux")
         vm_size = lookup(t, "vm_size", "Standard_B2s")
         os_disk_size_gb = lookup(t, "os_disk_size_gb", "127")
-        ultra_ssd = lookup(t, "ultra_ssd", "127")
+        ultra_ssd = lookup(t, "ultra_ssd", false)
         auto_scaling = lookup(t, "auto_scaling", false)
-        node_count = lookup(t, "node_count", 2)
-        max_count = t.auto_scaling ? lookup(t, "max_count", 2) : null
-        min_count = t.auto_scaling ? lookup(t, "min_count", 1) : null
+        node_count = t.auto_scaling ? null : lookup(t, "node_count", 2)
+        max_count = t.auto_scaling ? lookup(t, "max_count", 1) : null
+        min_count = t.auto_scaling ? lookup(t, "min_count", 0) : null
         max_surge = lookup(t, "max_surge", null)
         max_pods = lookup(t, "max_pods", 30)
         host_encryption = lookup(t, "host_encryption", false)
-        labels = t.labels
+        labels = lookup(t, "labels", null)
       }
     ] if length(s.node_pool[*]) > 0
   ])
