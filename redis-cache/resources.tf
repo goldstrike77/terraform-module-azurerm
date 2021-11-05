@@ -11,16 +11,17 @@ resource "random_integer" "integer" {
 # Manages a Redis Cache.
 resource "azurerm_redis_cache" "redis_cache" {
   for_each = { for s in var.res_spec.redis : format("%s", s.name) => s }
-  name                = each.value.name
-  location            = each.value.location
+  name = each.value.name
+  location = each.value.location
   resource_group_name = var.res_spec.rg[0].name
-  capacity            = each.value.capacity
-  family              = lookup(each.value, "sku", lower("basic")) == lower("premium") ? "P" : "C"
-  sku_name            = each.value.sku
+  capacity = each.value.capacity
+  family = lookup(each.value, "sku", lower("basic")) == lower("premium") ? "P" : "C"
+  sku_name = each.value.sku
   enable_non_ssl_port = lookup(each.value, "enable_non_ssl", false)
   minimum_tls_version = lookup(each.value, "minimum_tls_version", "1.2")
   public_network_access_enabled = lookup(each.value, "public_network_access", false)
   redis_version = lookup(each.value, "version", "4")
+  tags = merge(var.tags,each.value.tags)
 
   dynamic "redis_configuration" {
     for_each = length(each.value.redis_configuration) == 0 ? [] : [1]
@@ -51,4 +52,20 @@ resource "azurerm_redis_firewall_rule" "redis_firewall_rule" {
   resource_group_name = var.res_spec.rg[0].name
   start_ip = each.value.start
   end_ip = each.value.end
+}
+
+# Assigns a given Principal (User, Group or App) to a given Role.
+module "role_assignment" {
+  count = length(local.role_flat) > 0 ? 1 : 0
+  source = "git::https://github.com/goldstrike77/terraform-module-azurerm.git//role-assignment?ref=v0.1"
+  role_spec = local.role_flat
+  resource = { for i, redis_cache in azurerm_redis_cache.redis_cache: i => redis_cache.id }
+}
+
+# Manages a Private Endpoint.
+module "private_endpoint" {
+  count = length(local.private_endpoint_flat) > 0 ? 1 : 0
+  source = "/home/suzhetao/terraform_workspace/module/terraform-module-azurerm/private-endpoint"
+  private_endpoint_spec = local.private_endpoint_flat
+  resource = { for i, redis_cache in azurerm_redis_cache.redis_cache: i => redis_cache.id }
 }

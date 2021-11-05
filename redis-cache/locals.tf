@@ -11,3 +11,36 @@ locals {
     ] if length(s.firewall_rule[*]) > 0
   ])
 }
+
+locals {
+  role_flat = flatten([
+    for s in var.res_spec.redis[*] : [
+      for t in s.role_ass[*] : [
+        for u in t.name[*] : {
+          res_name = s.name
+          tags = s.tags
+          location = s.location
+          type = t.type
+          role_name = u
+          role = t.role
+        }
+      ]
+    ] if length(s.role_ass[*]) > 0
+  ])
+}
+
+locals {
+  private_endpoint_flat = flatten([
+    for s in var.res_spec[*] : [
+      for t in s.redis[*] : [
+        for u in t.private_endpoint[*] : {
+          rg = s.rg[0].name
+          location = t.location
+          res_name = t.name
+          network = u.network
+          subresource = ["redisCache"]
+        }
+      ] if length(t.private_endpoint[*]) > 0
+    ]
+  ])
+}
