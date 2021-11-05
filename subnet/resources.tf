@@ -48,14 +48,15 @@ resource "azurerm_network_security_rule" "network_security_rule" {
   access = each.value.access
   priority = each.value.priority
   protocol = each.value.protocol
-  source_address_prefix = lookup(each.value, "source_address_prefix", null)
-  source_address_prefixes = lookup(each.value, "source_address_prefixes", null)
-  destination_address_prefix = lookup(each.value, "destination_address_prefix", null)
-  destination_address_prefixes = lookup(each.value, "destination_address_prefixes", null)
-  source_port_range = lookup(each.value, "source_port_range", null)
-  source_port_ranges = lookup(each.value, "source_port_ranges", null)
-  destination_port_range = lookup(each.value, "destination_port_range", null)
-  destination_port_ranges = lookup(each.value, "destination_port_ranges", null)
+  source_address_prefix = each.value.source_address_prefix
+  source_address_prefixes = each.value.source_address_prefixes
+  destination_address_prefix = each.value.destination_address_prefix
+  destination_address_prefixes = each.value.destination_address_prefixes
+  source_port_range = each.value.source_port_range
+  source_port_ranges = each.value.source_port_ranges
+  destination_port_range = each.value.destination_port_range
+  destination_port_ranges = each.value.destination_port_ranges
+  description = each.value.description
 }
 
 # Associates a Network Security Group with a Subnet within a Virtual Network.

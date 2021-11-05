@@ -57,14 +57,15 @@ locals {
           access = u.access
           priority = u.priority
           protocol = u.protocol
-          source_address_prefix = lookup(u, "source_address_prefix", null)
+          source_address_prefix = lower(lookup(u, "source_address_prefix", null)) == "localsubnet" ? t.address_prefixes[0] : lookup(u, "source_address_prefix", null)
           source_address_prefixes = lookup(u, "source_address_prefixes", null)
-          destination_address_prefix = lookup(u, "destination_address_prefix", null)
+          destination_address_prefix = lower(lookup(u, "destination_address_prefix", null)) == "localsubnet" ? t.address_prefixes[0] : lookup(u, "destination_address_prefix", null)
           destination_address_prefixes = lookup(u, "destination_address_prefixes", null)
           source_port_range = lookup(u, "source_port_range", null)
           source_port_ranges = lookup(u, "source_port_ranges", null)
           destination_port_range = lookup(u, "destination_port_range", null)
           destination_port_ranges = lookup(u, "destination_port_ranges", null)
+          description = lookup(u, "description", null)
         }
       ] if length(t.security_group_rules[*]) > 0
     ]
