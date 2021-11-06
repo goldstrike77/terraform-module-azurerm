@@ -37,7 +37,8 @@ locals {
           rg = s.rg[0].name
           location = t.location
           res_name = t.name
-          network = u.network
+          network_interface = lookup(u, "network_interface", null)
+          private_dns_zone = lookup(u, "private_dns_zone", null)
           subresource = ["redisCache"]
         }
       ] if length(t.private_endpoint[*]) > 0

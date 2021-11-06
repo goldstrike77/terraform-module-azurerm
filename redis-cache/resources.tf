@@ -2,7 +2,7 @@
 resource "random_integer" "integer" {
   for_each = { for s in var.res_spec.redis : format("%s", s.name) => s }
   min = 0
-  max = 9
+  max = 23
   keepers = {
     seed = each.value.name
   }
@@ -65,7 +65,7 @@ module "role_assignment" {
 # Manages a Private Endpoint.
 module "private_endpoint" {
   count = length(local.private_endpoint_flat) > 0 ? 1 : 0
-  source = "/home/suzhetao/terraform_workspace/module/terraform-module-azurerm/private-endpoint"
+  source = "git::https://github.com/goldstrike77/terraform-module-azurerm.git//private-endpoint?ref=v0.1"
   private_endpoint_spec = local.private_endpoint_flat
   resource = { for i, redis_cache in azurerm_redis_cache.redis_cache: i => redis_cache.id }
 }
