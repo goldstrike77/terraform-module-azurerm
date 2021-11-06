@@ -15,7 +15,7 @@ resource "azurerm_redis_cache" "redis_cache" {
   location = each.value.location
   resource_group_name = var.res_spec.rg[0].name
   capacity = each.value.capacity
-  family = lookup(each.value, "sku", lower("basic")) == lower("premium") ? "P" : "C"
+  family = lookup(each.value, "sku", "basic") == lower("premium") ? "P" : "C"
   sku_name = each.value.sku
   enable_non_ssl_port = lookup(each.value, "enable_non_ssl", false)
   minimum_tls_version = lookup(each.value, "minimum_tls_version", "1.2")
