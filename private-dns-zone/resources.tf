@@ -15,7 +15,7 @@ resource "azurerm_private_dns_zone" "private_dns_zone" {
 
 # Manage Private DNS zone Virtual Network Links.
 resource "azurerm_private_dns_zone_virtual_network_link" "private_dns_zone_virtual_network_link" {
-  for_each = { for s in local.dns_flat : format("%s%s%s", s.name, s.rg, s.virtual_network) => s }
+  for_each = { for s in local.dns_flat : format("%s%s%s", s.name, s.resource_group, s.virtual_network) => s }
   name = "link-to-${each.value.virtual_network}"
   resource_group_name  = var.res_spec.rg[0].name
   private_dns_zone_name = azurerm_private_dns_zone.private_dns_zone[each.value.name].name
