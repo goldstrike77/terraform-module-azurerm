@@ -3,8 +3,8 @@ locals {
   vnet_flat = flatten([
     for s in var.res_spec.private_dns_zone[*] : [
       for t in s.link[*] : {
-        rg = t.resource_group
-        vnet = t.virtual_network
+        resource_group = t.resource_group
+        virtual_network = t.virtual_network
       }
     ] if length(s.link[*]) > 0
   ])
@@ -17,8 +17,8 @@ locals {
         name = s.name
         tags = lookup(s, "tags", null)
         registration = lookup(s, "registration", false)
-        rg = t.resource_group
-        vnet = t.virtual_network
+        resource_group = t.resource_group
+        virtual_network = t.virtual_network
       }
     ] if length(s.link[*]) > 0
   ])
