@@ -20,7 +20,7 @@ resource "azurerm_public_ip" "public_ip" {
 
 # Manages a Bastion Host.
 resource "azurerm_bastion_host" "bastion_host" {
-  for_each = { for s in var.res_spec.bastion : format("%s", s.name) => s }  
+  for_each = { for s in var.res_spec.bastion : format("%s", s.name) => s }
   name = each.value.name
   location = each.value.location
   resource_group_name = var.res_spec.rg[0].name
