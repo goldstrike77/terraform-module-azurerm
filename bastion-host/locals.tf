@@ -2,7 +2,7 @@
 locals {
   role_flat = flatten([
     for s in var.res_spec.bastion[*] : [
-      for t in s.role_ass[*] : [
+      for t in s.role_assignment[*] : [
         for u in t.name[*] : {
           res_name = s.name
           tags = s.tags
@@ -12,6 +12,6 @@ locals {
           role = t.role
         }
       ]
-    ] if length(s.role_ass[*]) > 0
+    ] if length(s.role_assignment[*]) > 0
   ])
 }

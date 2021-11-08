@@ -19,7 +19,7 @@ locals {
   role_flat = flatten([
     for s in var.res_spec.vnet[*] : [
       for t in s.subnet[*] : [
-        for u in t.role_ass[*] : [
+        for u in t.role_assignment[*] : [
           for v in u.name[*] : {
             res_name = t.name
             type = u.type
@@ -27,7 +27,7 @@ locals {
             role = u.role
           }
         ]
-      ] if length(t.role_ass[*]) > 0
+      ] if length(t.role_assignment[*]) > 0
     ]
   ])
 }
