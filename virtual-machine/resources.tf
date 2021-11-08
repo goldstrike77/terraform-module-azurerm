@@ -1,71 +1,78 @@
-# Generates random maintenance hour values.
-resource "random_integer" "integer" {
-  for_each = { for s in var.res_spec.redis : format("%s", s.name) => s }
-  min = 0
-  max = 23
-  keepers = {
-    seed = each.value.name
-  }
-}
-
-# Manages a Redis Cache.
-resource "azurerm_redis_cache" "redis_cache" {
-  for_each = { for s in var.res_spec.redis : format("%s", s.name) => s }
-  name = each.value.name
+# Manages an Availability Set for Virtual Machines.
+resource "azurerm_availability_set" "availability_set" {
+  for_each = { for s in var.res_spec.vm[*] : format("%s", s.collection) => s }
+  name = "avail-${each.value.collection}"
   location = each.value.location
   resource_group_name = var.res_spec.rg[0].name
-  capacity = each.value.capacity
-  family = lookup(each.value, "sku", "basic") == lower("premium") ? "P" : "C"
-  sku_name = each.value.sku
-  enable_non_ssl_port = lookup(each.value, "enable_non_ssl", false)
-  minimum_tls_version = lookup(each.value, "minimum_tls_version", "1.2")
-  public_network_access_enabled = lookup(each.value, "public_network_access", false)
-  redis_version = lookup(each.value, "version", "4")
+  platform_fault_domain_count = 2
+  platform_update_domain_count = 5
+  managed = true
   tags = merge(var.tags,each.value.tags)
-
-  dynamic "redis_configuration" {
-    for_each = length(each.value.redis_configuration) == 0 ? [] : [1]
-    content {
-      enable_authentication = lookup(each.value.redis_configuration, "enable_authentication", true)
-      maxmemory_reserved = lookup(each.value.redis_configuration, "maxmemory_reserved", 2)
-      maxfragmentationmemory_reserved = lookup(each.value.redis_configuration, "maxfragmentationmemory_reserved", 2)
-      maxmemory_delta = lookup(each.value.redis_configuration, "maxmemory_delta", 2)
-      maxmemory_policy = lookup(each.value.redis_configuration, "maxmemory_policy", "volatile-lru")
-    }
-  }
-
-  dynamic "patch_schedule" {
-    for_each = length(each.value.patch_schedule) == 0 ? [] : [1]
-    content {
-      day_of_week = lookup(each.value.patch_schedule, "day_of_week", title("Sunday"))
-      start_hour_utc = lookup(each.value.patch_schedule, "start_hour_utc", random_integer.integer[each.value.name].result)
-      maintenance_window = lookup(each.value.patch_schedule, "maintenance_window", "PT5H")
-    }
-  }
 }
 
-# Manages a Firewall Rule associated with a Redis Cache.
-resource "azurerm_redis_firewall_rule" "redis_firewall_rule" {
-  for_each = { for s in local.firewall_rule_flat : format("%s", s.name) => s }
-  name = each.value.role_name
-  redis_cache_name = azurerm_redis_cache.redis_cache[each.value.name].name
+# Access information about an existing Subnet within a Virtual Network.
+data "azurerm_subnet" "subnet" {
+  for_each = { for s in local.nic_flat : format("%s-%02d", s.res_name,s.name) => s }
+  name = each.value.subnet
+  virtual_network_name = each.value.virtual_network
+  resource_group_name = each.value.resource_group
+}
+
+# Manages a Public IP Address.
+resource "azurerm_public_ip" "public_ip" {
+  for_each = { for s in local.nic_flat : format("%s-%02d", s.res_name,s.name) => s if s.public }
+  name = "pip-${each.value.res_name}"
+  location = each.value.location
   resource_group_name = var.res_spec.rg[0].name
-  start_ip = each.value.start
-  end_ip = each.value.end
+  allocation_method = "Static"
+  sku = "Standard"
+  availability_zone = "No-Zone"
+  tags = merge(var.tags,each.value.tags)
 }
 
-# Assigns a given Principal (User, Group or App) to a given Role.
-module "role_assignment" {
-  count = length(local.role_flat) > 0 ? 1 : 0
-  source = "git::https://github.com/goldstrike77/terraform-module-azurerm.git//role-assignment?ref=v0.1"
-  role_spec = local.role_flat
-  resource = { for i, redis_cache in azurerm_redis_cache.redis_cache: i => redis_cache.id }
+# Manages a Network Interface.
+resource "azurerm_network_interface" "network_interface" {
+  for_each = { for s in local.nic_flat : format("%s-%02d", s.res_name,s.name) => s }
+  name = "nic-${each.key}"
+  location = each.value.location
+  resource_group_name = var.res_spec.rg[0].name
+  enable_ip_forwarding = each.value.ip_forwarding
+  enable_accelerated_networking = each.value.accelerated
+  tags = merge(var.tags,each.value.tags)
+  ip_configuration {
+    name = "ip-${each.key}"
+    subnet_id = data.azurerm_subnet.subnet[each.key].id
+    private_ip_address_allocation = "dynamic"
+    public_ip_address_id = each.value.public ? azurerm_public_ip.public_ip[each.key].id : null
+  }
 }
 
-# Manages a Private Endpoint.
-module "private_endpoint" {
-  count = length(local.private_endpoint_flat) > 0 ? 1 : 0
-  source = "git::https://github.com/goldstrike77/terraform-module-azurerm.git//private-endpoint?ref=v0.1"
-  private_endpoint_spec = local.private_endpoint_flat
-  resource = { for i, redis_cache in azurerm_redis_cache.redis_cache: i => redis_cache.id }
+/*
+# Manages a Linux Virtual Machine.
+resource "azurerm_linux_virtual_machine" "linux_virtual_machine" {
+  for_each = { for s in local.vm_flat : format("%s", s.res_name) => s if s.config.type == lower("linux") }
+  name = lower(each.value.res_name)
+  location = each.value.location
+  resource_group_name = var.res_spec.rg[0].name
+  availability_set_id = azurerm_availability_set.availability_set[each.value.collection].id
+  network_interface_ids = [azurerm_network_interface.network_interface[[for i in keys(azurerm_network_interface.network_interface[*]): i if length(regexall("vmappnode01", i)) > 0]].id]
+  size = each.value.config.size
+  computer_name = lower(each.value.res_name)
+  admin_username = lookup(each.value.config, "user", "oper")
+  admin_password = lookup(each.value.config, "pass", "changeme")
+  disable_password_authentication = false
+  tags = merge(var.tags,each.value.tags)
+  os_disk {
+    name = "osdisk-${lower(each.value.res_name)}"
+    caching = each.value.config.os_disk_type == "Premium_LRS" ? "None" : "ReadWrite"
+    storage_account_type = lookup(each.value.config, "os_disk_type", "Standard_LRS")
+  }
+  source_image_reference {
+    publisher = each.value.config.publisher
+    offer     = each.value.config.offer
+    sku       = each.value.config.sku
+    version   = each.value.config.version
+  }
+  boot_diagnostics {}
 }
+*/
