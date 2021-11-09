@@ -1,6 +1,6 @@
 # Manages a Recovery Services Vault.
 resource "azurerm_recovery_services_vault" "recovery_services_vault" {
-for_each = { for s in var.res_spec.rsv : format("%s", s.name) => s }
+  for_each = { for s in var.res_spec.rsv : format("%s", s.name) => s }
   name = each.value.name
   location = each.value.location
   resource_group_name = var.res_spec.rg[0].name

@@ -1,8 +1,8 @@
 # Generates random maintenance hour values.
 resource "random_integer" "integer" {
   for_each = { for s in var.res_spec.redis : format("%s", s.name) => s }
-  min = 0
-  max = 23
+  min = 20
+  max = 22
   keepers = {
     seed = each.value.name
   }

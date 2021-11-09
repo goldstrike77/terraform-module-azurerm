@@ -19,6 +19,10 @@ locals {
       for t in s.name : [
         for u in s.data_disk : {
           res_name = t
+          location = s.location
+          tags = s.tags
+          name = u.name
+          config = s.config
           type = lookup(u, "type", "Standard_LRS")
           size = lookup(u, "size", 10)
         }
@@ -45,5 +49,24 @@ locals {
         }
       ]
     ]
+  ])
+}
+
+locals {
+  role_flat = flatten([
+    for s in var.res_spec.vm[*] : [
+      for t in s.role_assignment[*] : [
+        for u in t.name[*] : [
+          for v in s.name[*] : {
+            res_name = v
+            tags = s.tags
+            location = s.location
+            type = t.type
+            role_name = u
+            role = t.role
+          }
+        ]
+      ]
+    ] if length(s.role_assignment[*]) > 0
   ])
 }
