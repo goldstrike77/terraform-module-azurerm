@@ -70,3 +70,22 @@ locals {
     ] if length(s.role_assignment[*]) > 0
   ])
 }
+
+locals {
+  extension_flat = flatten([
+    for s in var.res_spec.vm[*] : [
+      for t in s.name : [
+        for u in s.extension : {
+          res_name = t
+          config = s.config
+          name = u.name
+          tags = lookup(s, "tags", null)
+          publisher = u.publisher
+          type = u.type
+          handler_version = u.handler_version
+          settings = lookup(u, "settings", null)
+        }
+      ]
+    ] if length(s.extension[*]) > 0
+  ])
+}

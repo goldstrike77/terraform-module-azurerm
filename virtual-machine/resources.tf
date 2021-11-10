@@ -112,6 +112,18 @@ resource "azurerm_virtual_machine_data_disk_attachment" "linux_virtual_machine_d
   caching = each.value.type == "Premium_LRS" ? "None" : "ReadWrite"
 }
 
+# Manages a Linux Virtual Machine Extension to provide post deployment configuration and run automated tasks.
+resource "azurerm_virtual_machine_extension" "linux_virtual_machine_extension" {
+  for_each = { for s in local.extension_flat : format("%s", s.name) => s if s.config.type == lower("linux") }
+  name = each.value.name
+  virtual_machine_id = azurerm_linux_virtual_machine.linux_virtual_machine[each.value.res_name].id
+  publisher = each.value.publisher
+  type = each.value.type
+  type_handler_version = each.value.handler_version
+  tags = merge(var.tags,each.value.tags)
+  settings = jsonencode(each.value.settings)
+}
+
 # Manages Azure Backup for an Linux Virtual Machine.
 resource "azurerm_backup_protected_vm" "linux_backup_protected_vm" {
   for_each = { for s in local.vm_flat : format("%s", s.res_name) => s if s.config.type == lower("linux") && s.config.backup }
@@ -155,6 +167,18 @@ resource "azurerm_virtual_machine_data_disk_attachment" "windows_virtual_machine
   virtual_machine_id = azurerm_windows_virtual_machine.windows_virtual_machine[each.value.res_name].id
   lun = each.value.name
   caching = each.value.type == "Premium_LRS" ? "None" : "ReadWrite"
+}
+
+# Manages a Windows Virtual Machine Extension to provide post deployment configuration and run automated tasks.
+resource "azurerm_virtual_machine_extension" "windows_virtual_machine_extension" {
+  for_each = { for s in local.extension_flat : format("%s", s.name) => s if s.config.type == lower("windows") }
+  name = each.value.name
+  virtual_machine_id = azurerm_windows_virtual_machine.windows_virtual_machine[each.value.res_name].id
+  publisher = each.value.publisher
+  type = each.value.type
+  type_handler_version = each.value.handler_version
+  tags = merge(var.tags,each.value.tags)
+  settings = jsonencode(each.value.settings)
 }
 
 # Manages Azure Backup for an Windows Virtual Machine.
