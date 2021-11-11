@@ -7,5 +7,5 @@ output "linux_virtual_machine_id" {
 }
 
 output "windows_virtual_machine_id" {
- value = { for i, windows_virtual_machine in azurerm_windows_virtual_machine.windows_virtual_machine: i => regex(".*/(.*)", windows_virtual_machine.id) }
+  value = { for i, windows_virtual_machine in azurerm_windows_virtual_machine.windows_virtual_machine: i => regex(".*/(.*)", windows_virtual_machine.id) }
 }

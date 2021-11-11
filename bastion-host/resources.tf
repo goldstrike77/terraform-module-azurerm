@@ -9,7 +9,7 @@ data "azurerm_subnet" "subnet" {
 # Manages a Public IP Address.
 resource "azurerm_public_ip" "public_ip" {
   for_each = { for s in var.res_spec.bastion : format("%s", s.name) => s }
-  name = "pip-${each.value.name}"
+  name = "pip-bastion-${each.value.name}"
   location = each.value.location
   resource_group_name = var.res_spec.rg[0].name
   allocation_method = "Static"

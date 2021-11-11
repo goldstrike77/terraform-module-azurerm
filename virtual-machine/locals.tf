@@ -5,7 +5,7 @@ locals {
       for t in s.name : {
         res_name = t
         tags = lookup(s, "tags", null)
-        collection = s.collection
+        component = s.component
         location = s.location
         config = s.config
       }
@@ -21,7 +21,7 @@ locals {
           res_name = t
           location = s.location
           tags = s.tags
-          name = u.name
+          disk_name = u.name
           config = s.config
           type = lookup(u, "type", "Standard_LRS")
           size = lookup(u, "size", 10)
@@ -36,13 +36,15 @@ locals {
     for s in var.res_spec.vm[*] : [
       for t in s.name : [
         for u in s.network : {
+          res_rg = var.res_spec.rg[0].name
+          component = s.component
           res_name = t
           location = s.location
           tags = s.tags
           ip_forwarding = lookup(u, "ip_forwarding", false)
           accelerated = lookup(u, "accelerated", false)
           public = lookup(u, "public", false)
-          name = u.name
+          nic_name = u.name
           subnet = u.subnet
           virtual_network = u.virtual_network
           resource_group = u.resource_group

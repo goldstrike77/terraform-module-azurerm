@@ -1,7 +1,7 @@
 # Manages an Availability Set for Virtual Machines.
 resource "azurerm_availability_set" "availability_set" {
-  for_each = { for s in var.res_spec.vm[*] : format("%s", s.collection) => s }
-  name = "avail-${each.value.collection}"
+  for_each = { for s in var.res_spec.vm[*] : format("%s", s.component) => s }
+  name = "avail-${each.value.component}"
   location = each.value.location
   resource_group_name = var.res_spec.rg[0].name
   platform_fault_domain_count = 2
@@ -28,7 +28,7 @@ resource "azurerm_backup_policy_vm" "backup_policy_vm" {
 
 # Access information about an existing Subnet within a Virtual Network.
 data "azurerm_subnet" "subnet" {
-  for_each = { for s in local.nic_flat : format("%s-%d", s.res_name,s.name) => s }
+  for_each = { for s in local.nic_flat : format("%s-%d", s.res_name,s.nic_name) => s }
   name = each.value.subnet
   virtual_network_name = each.value.virtual_network
   resource_group_name = each.value.resource_group
@@ -36,8 +36,8 @@ data "azurerm_subnet" "subnet" {
 
 # Manages a Public IP Address.
 resource "azurerm_public_ip" "public_ip" {
-  for_each = { for s in local.nic_flat : format("%s-%d", s.res_name,s.name) => s if s.public }
-  name = "pip-${each.value.res_name}"
+  for_each = { for s in local.nic_flat : format("%s-%d", s.res_name,s.nic_name) => s if s.public }
+  name = "pip-vm-${each.value.res_name}"
   location = each.value.location
   resource_group_name = var.res_spec.rg[0].name
   allocation_method = "Static"
@@ -48,7 +48,7 @@ resource "azurerm_public_ip" "public_ip" {
 
 # Manages a Network Interface.
 resource "azurerm_network_interface" "network_interface" {
-  for_each = { for s in local.nic_flat : format("%s-%d", s.res_name,s.name) => s }
+  for_each = { for s in local.nic_flat : format("%s-%d", s.res_name,s.nic_name) => s }
   name = "nic-${each.key}"
   location = each.value.location
   resource_group_name = var.res_spec.rg[0].name
@@ -65,7 +65,7 @@ resource "azurerm_network_interface" "network_interface" {
 
 # Manages a managed disk.
 resource "azurerm_managed_disk" "managed_disk" {
-  for_each = { for s in local.disk_flat : format("%s-%d", s.res_name,s.name) => s }
+  for_each = { for s in local.disk_flat : format("%s-%d", s.res_name,s.disk_name) => s }
   name = "disk-${each.key}"
   location = each.value.location
   resource_group_name = var.res_spec.rg[0].name
@@ -81,7 +81,7 @@ resource "azurerm_linux_virtual_machine" "linux_virtual_machine" {
   name = lower(each.value.res_name)
   location = each.value.location
   resource_group_name = var.res_spec.rg[0].name
-  availability_set_id = azurerm_availability_set.availability_set[each.value.collection].id
+  availability_set_id = azurerm_availability_set.availability_set[each.value.component].id
   network_interface_ids = [for i in values(azurerm_network_interface.network_interface): i.id if length(regexall(each.key, i.id)) > 0]
   size = each.value.config.size
   computer_name = lower(each.value.res_name)
@@ -105,10 +105,10 @@ resource "azurerm_linux_virtual_machine" "linux_virtual_machine" {
 
 # Manages attaching a Disk to a Linux Virtual Machine.
 resource "azurerm_virtual_machine_data_disk_attachment" "linux_virtual_machine_data_disk_attachment" {
-  for_each = { for s in local.disk_flat : format("%s-%d", s.res_name,s.name) => s if s.config.type == lower("linux") }
+  for_each = { for s in local.disk_flat : format("%s-%d", s.res_name,s.disk_name) => s if s.config.type == lower("linux") }
   managed_disk_id = azurerm_managed_disk.managed_disk[each.key].id
   virtual_machine_id = azurerm_linux_virtual_machine.linux_virtual_machine[each.value.res_name].id
-  lun = each.value.name
+  lun = each.value.disk_name
   caching = each.value.type == "Premium_LRS" ? "None" : "ReadWrite"
 }
 
@@ -139,7 +139,7 @@ resource "azurerm_windows_virtual_machine" "windows_virtual_machine" {
   name = lower(each.value.res_name)
   location = each.value.location
   resource_group_name = var.res_spec.rg[0].name
-  availability_set_id = azurerm_availability_set.availability_set[each.value.collection].id
+  availability_set_id = azurerm_availability_set.availability_set[each.value.component].id
   network_interface_ids = [for i in values(azurerm_network_interface.network_interface): i.id if length(regexall(each.key, i.id)) > 0]
   size = each.value.config.size
   computer_name = lower(each.value.res_name)
@@ -162,10 +162,10 @@ resource "azurerm_windows_virtual_machine" "windows_virtual_machine" {
 
 # Manages attaching a Disk to a Windows Virtual Machine.
 resource "azurerm_virtual_machine_data_disk_attachment" "windows_virtual_machine_data_disk_attachment" {
-  for_each = { for s in local.disk_flat : format("%s-%d", s.res_name,s.name) => s if s.config.type == lower("windows") }
+  for_each = { for s in local.disk_flat : format("%s-%d", s.res_name,s.disk_name) => s if s.config.type == lower("windows") }
   managed_disk_id = azurerm_managed_disk.managed_disk[each.key].id
   virtual_machine_id = azurerm_windows_virtual_machine.windows_virtual_machine[each.value.res_name].id
-  lun = each.value.name
+  lun = each.value.disk_name
   caching = each.value.type == "Premium_LRS" ? "None" : "ReadWrite"
 }
 
@@ -204,4 +204,12 @@ module "windows_role_assignment" {
   source = "git::https://github.com/goldstrike77/terraform-module-azurerm.git//role-assignment?ref=v0.1"
   role_spec = local.role_flat
   resource = { for i, windows_virtual_machine in azurerm_windows_virtual_machine.windows_virtual_machine: i => windows_virtual_machine.id }
+}
+
+# Manages a Load Balancer Resource.
+module "lb" {
+  source = "/home/suzhetao/terraform_workspace/module/terraform-module-azurerm/lb"
+  tags = var.tags
+  res_spec = zipmap(["rg", "lb"], [var.res_spec.rg, var.res_spec.vm])
+  depends_on = [azurerm_network_interface.network_interface]
 }
