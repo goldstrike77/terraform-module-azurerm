@@ -208,7 +208,7 @@ module "windows_role_assignment" {
 
 # Manages a Load Balancer Resource.
 module "lb" {
-  source = "/home/suzhetao/terraform_workspace/module/terraform-module-azurerm/lb"
+  source = "git::https://github.com/goldstrike77/terraform-module-azurerm.git//lb?ref=v0.1"
   tags = var.tags
   res_spec = zipmap(["rg", "lb"], [var.res_spec.rg, var.res_spec.vm])
   depends_on = [azurerm_network_interface.network_interface]
