@@ -13,9 +13,6 @@ locals {
       }
     ]
   ])
-}
-
-locals {
   role_flat = flatten([
     for s in var.res_spec.vnet[*] : [
       for t in s.subnet[*] : [
@@ -30,9 +27,6 @@ locals {
       ] if length(t.role_assignment[*]) > 0
     ]
   ])
-}
-
-locals {
   nsg_flat = flatten([
     for s in var.res_spec.vnet[*] : [
       for t in s.subnet[*] : {
@@ -42,9 +36,6 @@ locals {
       } if length(t.security_group_rules[*]) > 0
     ]
   ])
-}
-
-locals {
   nsgr_flat = flatten([
     for s in var.res_spec.vnet[*] : [
       for t in s.subnet[*] : [

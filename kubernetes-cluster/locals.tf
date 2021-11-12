@@ -24,9 +24,6 @@ locals {
       }
     ] if length(s.node_pool[*]) > 0
   ])
-}
-
-locals {
   role_flat = flatten([
     for s in var.res_spec.rg[*] : [
       for t in s.role_assignment[*] : [

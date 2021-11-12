@@ -11,9 +11,6 @@ locals {
       }
     ]
   ])
-}
-
-locals {
   disk_flat = flatten([
     for s in var.res_spec.vm[*] : [
       for t in s.name : [
@@ -29,9 +26,6 @@ locals {
       ]
     ] if length(s.data_disk[*]) > 0
   ])
-}
-
-locals {
   nic_flat = flatten([
     for s in var.res_spec.vm[*] : [
       for t in s.name : [
@@ -52,9 +46,6 @@ locals {
       ]
     ]
   ])
-}
-
-locals {
   role_flat = flatten([
     for s in var.res_spec.vm[*] : [
       for t in s.role_assignment[*] : [
@@ -71,9 +62,6 @@ locals {
       ]
     ] if length(s.role_assignment[*]) > 0
   ])
-}
-
-locals {
   extension_flat = flatten([
     for s in var.res_spec.vm[*] : [
       for t in s.name : [

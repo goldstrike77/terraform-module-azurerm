@@ -8,9 +8,6 @@ locals {
       }
     ] if length(s.link[*]) > 0
   ])
-}
-
-locals {
   dns_flat = flatten([
     for s in var.res_spec.private_dns_zone[*] : [
       for t in s.link[*] : {

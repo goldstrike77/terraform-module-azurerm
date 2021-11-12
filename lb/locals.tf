@@ -14,9 +14,6 @@ locals {
       } if length(t.lb_spec[*]) > 0
     ]
   ])
-}
-
-locals {
   nic_flat = flatten([
     for s in var.res_spec.lb[*] : [
       for t in s.network : [
@@ -28,9 +25,6 @@ locals {
       ] if length(t.lb_spec[*]) > 0
     ]
   ])
-}
-
-locals {
   port_flat = flatten([
     for s in var.res_spec.lb[*] : [
       for t in s.network : [
