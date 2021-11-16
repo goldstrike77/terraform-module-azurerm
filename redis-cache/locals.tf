@@ -35,7 +35,7 @@ locals {
           private_dns_zone = lookup(u, "private_dns_zone", null)
           subresource = ["redisCache"]
         }
-      ] if length(t.private_endpoint[*]) > 0
+      ] if length(t.private_endpoint) > 0
     ]
   ])
 }

@@ -25,7 +25,7 @@ locals {
           private_dns_zone = lookup(u, "private_dns_zone", null)
           subresource = ["namespace"]
         }
-      ] if length(t.private_endpoint[*]) > 0
+      ] if length(t.private_endpoint) > 0
     ]
   ])
   network_rule_flat = flatten([

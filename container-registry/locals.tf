@@ -14,4 +14,26 @@ locals {
       ]
     ] if length(s.role_assignment[*]) > 0
   ])
+  private_endpoint_flat = flatten([
+    for s in var.res_spec[*] : [
+      for t in s.acr[*] : [
+        for u in t.private_endpoint[*] : {
+          rg = s.rg[0].name
+          location = t.location
+          res_name = t.name
+          network_interface = lookup(u, "network_interface", null)
+          private_dns_zone = lookup(u, "private_dns_zone", null)
+          subresource = ["registry"]
+        }
+      ] if length(t.private_endpoint) > 0 && lower(t.sku) == "premium"
+    ]
+  ])
+  ip_rule_flat = flatten([
+    for s in var.res_spec.acr[*] : [
+      for t in s.ip_rule : {
+        res_name = s.name
+        ip_range = t.ip_range
+      }
+     ] if length(s.ip_rule[*]) > 0
+  ])
 }

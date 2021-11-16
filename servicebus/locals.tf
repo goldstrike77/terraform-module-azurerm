@@ -24,8 +24,8 @@ locals {
           network_interface = lookup(u, "network_interface", null)
           private_dns_zone = lookup(u, "private_dns_zone", null)
           subresource = ["namespace"]
-        } if t.sku == "Premium"
-      ] if length(t.private_endpoint[*]) > 0
+        }
+      ] if length(t.private_endpoint) > 0 && lower(t.sku) == "premium"
     ]
   ])
   network_rule_flat = flatten([
