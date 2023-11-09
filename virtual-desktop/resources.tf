@@ -115,3 +115,30 @@ resource "azurerm_windows_virtual_machine" "windows_virtual_machine" {
     version   = lookup(var.res_spec.virtual_desktop.host_pool, "version", "latest")
   }
 }
+
+# Register the session hosts to the host pool.
+resource "azurerm_virtual_machine_extension" "virtual_machine_extension" {
+  count                      = var.res_spec.virtual_desktop.host_pool.number
+  name                       = "ext-vm-avd-${count.index}"
+  virtual_machine_id         = azurerm_windows_virtual_machine.windows_virtual_machine.*.id[count.index]
+  publisher                  = "Microsoft.Powershell"
+  type                       = "DSC"
+  type_handler_version       = "2.73"
+  auto_upgrade_minor_version = true
+  settings                   = <<-SETTINGS
+    {
+      "modulesUrl": "https://wvdportalstorageblob.blob.core.windows.net/galleryartifacts/Configuration_09-08-2022.zip",
+      "configurationFunction": "Configuration.ps1\\AddSessionHost",
+      "properties": {
+        "HostPoolName":"${azurerm_virtual_desktop_host_pool.virtual_desktop_host_pool.name}"
+      }
+    }
+SETTINGS
+  protected_settings         = <<PROTECTED_SETTINGS
+  {
+    "properties": {
+      "registrationInfoToken": "${azurerm_virtual_desktop_host_pool_registration_info.virtual_desktop_host_pool_registration_info.token}"
+    }
+  }
+PROTECTED_SETTINGS
+}
