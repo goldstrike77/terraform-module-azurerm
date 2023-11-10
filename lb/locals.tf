@@ -3,14 +3,15 @@ locals {
   lb_flat = flatten([
     for s in var.res_spec.lb[*] : [
       for t in s.network : {
-        lb_name = s.component
-        location = s.location
-        tags = s.tags
-        nic_name = t.name
-        subnet = t.subnet
+        lb_name         = s.component
+        zones           = s.zones
+        location        = s.location
+        tags            = s.tags
+        nic_name        = t.name
+        subnet          = t.subnet
         virtual_network = t.virtual_network
-        resource_group = t.resource_group
-        lb_public = lookup(t, "lb_public", false)
+        resource_group  = t.resource_group
+        lb_public       = lookup(t, "lb_public", false)
       } if length(t.lb_spec[*]) > 0
     ]
   ])
@@ -19,7 +20,7 @@ locals {
       for t in s.network : [
         for u in s.name : {
           res_name = u
-          lb_name = s.component
+          lb_name  = s.component
           nic_name = t.name
         }
       ] if length(t.lb_spec[*]) > 0
@@ -29,18 +30,18 @@ locals {
     for s in var.res_spec.lb[*] : [
       for t in s.network : [
         for u in t.lb_spec : {
-          lb_name = s.component
-          nic_name = t.name
-          lb_public = lookup(t, "lb_public", false)
-          nat = lookup(u, "nat", false)
-          protocol = lower(u.protocol)
-          frontend_port = u.frontend_port
-          backend_port = u.backend_port
-          probe_port = u.probe_port
+          lb_name        = s.component
+          nic_name       = t.name
+          lb_public      = lookup(t, "lb_public", false)
+          nat            = lookup(u, "nat", false)
+          protocol       = lower(u.protocol)
+          frontend_port  = u.frontend_port
+          backend_port   = u.backend_port
+          probe_port     = u.probe_port
           probe_protocol = lower(lookup(u, "probe_protocol", "tcp"))
-          probe_path = lookup(u, "probe_path", "/")
+          probe_path     = lookup(u, "probe_path", "/")
           probe_interval = lookup(u, "probe_interval", "15")
-          probe_number = lookup(u, "probe_number", 2)
+          probe_number   = lookup(u, "probe_number", 2)
         }
       ] if length(t.lb_spec[*]) > 0
     ]

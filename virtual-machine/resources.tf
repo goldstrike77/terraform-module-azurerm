@@ -42,7 +42,7 @@ resource "azurerm_public_ip" "public_ip" {
   resource_group_name = var.res_spec.rg[0].name
   allocation_method   = "Static"
   sku                 = "Standard"
-  availability_zone   = "No-Zone"
+  zones               = each.value.zones
   tags                = merge(var.tags, each.value.tags)
 }
 
@@ -79,6 +79,7 @@ resource "azurerm_managed_disk" "managed_disk" {
 resource "azurerm_linux_virtual_machine" "linux_virtual_machine" {
   for_each                        = { for s in local.vm_flat : format("%s", s.res_name) => s if s.config.type == lower("linux") }
   name                            = lower(each.value.res_name)
+  zone                            = each.value.zone
   location                        = each.value.location
   resource_group_name             = var.res_spec.rg[0].name
   availability_set_id             = azurerm_availability_set.availability_set[each.value.component].id
@@ -137,6 +138,7 @@ resource "azurerm_backup_protected_vm" "linux_backup_protected_vm" {
 resource "azurerm_windows_virtual_machine" "windows_virtual_machine" {
   for_each              = { for s in local.vm_flat : format("%s", s.res_name) => s if s.config.type == lower("windows") }
   name                  = lower(each.value.res_name)
+  zone                  = each.value.zone
   location              = each.value.location
   resource_group_name   = var.res_spec.rg[0].name
   availability_set_id   = azurerm_availability_set.availability_set[each.value.component].id
