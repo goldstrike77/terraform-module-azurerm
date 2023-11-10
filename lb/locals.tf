@@ -4,7 +4,6 @@ locals {
     for s in var.res_spec.lb[*] : [
       for t in s.network : {
         lb_name         = s.component
-        zones           = s.zones
         location        = s.location
         tags            = s.tags
         nic_name        = t.name

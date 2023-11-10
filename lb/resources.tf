@@ -21,7 +21,6 @@ resource "azurerm_public_ip" "public_ip" {
   resource_group_name = var.res_spec.rg[0].name
   sku                 = "Standard"
   allocation_method   = "Static"
-  zones               = each.value.zones
   domain_name_label   = lookup(each.value, "domain_name_label", null)
   tags                = merge(var.tags, each.value.tags)
 }
@@ -36,7 +35,6 @@ resource "azurerm_lb" "lb" {
   tags                = merge(var.tags, each.value.tags)
 
   frontend_ip_configuration {
-    zones                         = each.value.zones
     name                          = lookup(each.value, "lb_public", false) ? "pip-lb-${each.key}" : "ip-lb-${each.key}"
     public_ip_address_id          = lookup(each.value, "lb_public", false) ? azurerm_public_ip.public_ip[each.key].id : null
     subnet_id                     = lookup(each.value, "lb_public", false) ? null : data.azurerm_subnet.subnet[each.key].id
@@ -65,7 +63,7 @@ resource "azurerm_lb_probe" "lb_probe" {
   for_each            = { for s in local.port_flat : format("%s-%d-%s", s.lb_name, s.nic_name, s.backend_port) => s }
   loadbalancer_id     = azurerm_lb.lb["${each.value.lb_name}-${each.value.nic_name}"].id
   name                = "probe-${each.value.probe_protocol}-${each.value.probe_port}"
-  protocol            = each.value.probe_protocol
+  protocol            = title(each.value.probe_protocol)
   port                = each.value.probe_port
   request_path        = each.value.probe_protocol == "tcp" ? null : each.value.probe_path
   interval_in_seconds = each.value.probe_interval
@@ -77,7 +75,7 @@ resource "azurerm_lb_rule" "lb_rule" {
   for_each                       = { for s in local.port_flat : format("%s-%d-%s", s.lb_name, s.nic_name, s.backend_port) => s if !s.nat }
   loadbalancer_id                = azurerm_lb.lb["${each.value.lb_name}-${each.value.nic_name}"].id
   name                           = "rule-${each.value.protocol}-${each.value.backend_port}"
-  protocol                       = each.value.protocol
+  protocol                       = title(each.value.protocol)
   frontend_port                  = each.value.frontend_port
   backend_port                   = each.value.backend_port
   probe_id                       = azurerm_lb_probe.lb_probe[each.key].id

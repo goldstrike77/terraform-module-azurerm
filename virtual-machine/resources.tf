@@ -1,6 +1,16 @@
+# Generates random values from availability zone.
+resource "random_integer" "integer" {
+  for_each = { for s in local.vm_flat : format("%s", s.res_name) => s if s.availability_options == "availability_zone" }
+  min      = 1
+  max      = 3
+  keepers = {
+    res_name = lower(each.key)
+  }
+}
+
 # Manages an Availability Set for Virtual Machines.
 resource "azurerm_availability_set" "availability_set" {
-  for_each                     = { for s in var.res_spec.vm[*] : format("%s", s.component) => s }
+  for_each                     = { for s in var.res_spec.vm[*] : format("%s", s.component) => s if s.availability_options == "availability_set" }
   name                         = "avail-${each.value.component}"
   location                     = each.value.location
   resource_group_name          = var.res_spec.rg[0].name
@@ -42,7 +52,6 @@ resource "azurerm_public_ip" "public_ip" {
   resource_group_name = var.res_spec.rg[0].name
   allocation_method   = "Static"
   sku                 = "Standard"
-  zones               = each.value.zones
   tags                = merge(var.tags, each.value.tags)
 }
 
@@ -58,7 +67,7 @@ resource "azurerm_network_interface" "network_interface" {
   ip_configuration {
     name                          = "ip-${each.key}"
     subnet_id                     = data.azurerm_subnet.subnet[each.key].id
-    private_ip_address_allocation = "dynamic"
+    private_ip_address_allocation = "Dynamic"
     public_ip_address_id          = each.value.public ? azurerm_public_ip.public_ip[each.key].id : null
   }
 }
@@ -78,11 +87,11 @@ resource "azurerm_managed_disk" "managed_disk" {
 # Manages a Linux Virtual Machine.
 resource "azurerm_linux_virtual_machine" "linux_virtual_machine" {
   for_each                        = { for s in local.vm_flat : format("%s", s.res_name) => s if s.config.type == lower("linux") }
-  name                            = lower(each.value.res_name)
-  zone                            = each.value.zone
+  name                            = lower(each.key)
   location                        = each.value.location
   resource_group_name             = var.res_spec.rg[0].name
-  availability_set_id             = azurerm_availability_set.availability_set[each.value.component].id
+  availability_set_id             = each.value.availability_options == "availability_set" ? azurerm_availability_set.availability_set[each.value.component].id : null
+  zone                            = each.value.availability_options == "availability_zone" ? random_integer.integer[each.value.res_name].result : null
   network_interface_ids           = [for i in values(azurerm_network_interface.network_interface) : i.id if length(regexall(each.key, i.id)) > 0]
   size                            = each.value.config.size
   computer_name                   = lower(each.value.res_name)
@@ -115,8 +124,8 @@ resource "azurerm_virtual_machine_data_disk_attachment" "linux_virtual_machine_d
 
 # Manages a Linux Virtual Machine Extension to provide post deployment configuration and run automated tasks.
 resource "azurerm_virtual_machine_extension" "linux_virtual_machine_extension" {
-  for_each             = { for s in local.extension_flat : format("%s", s.name) => s if s.config.type == lower("linux") }
-  name                 = each.value.name
+  for_each             = { for s in local.extension_flat : format("%s-%s", s.res_name, s.name) => s if s.config.type == lower("linux") }
+  name                 = each.key
   virtual_machine_id   = azurerm_linux_virtual_machine.linux_virtual_machine[each.value.res_name].id
   publisher            = each.value.publisher
   type                 = each.value.type
@@ -138,10 +147,10 @@ resource "azurerm_backup_protected_vm" "linux_backup_protected_vm" {
 resource "azurerm_windows_virtual_machine" "windows_virtual_machine" {
   for_each              = { for s in local.vm_flat : format("%s", s.res_name) => s if s.config.type == lower("windows") }
   name                  = lower(each.value.res_name)
-  zone                  = each.value.zone
   location              = each.value.location
   resource_group_name   = var.res_spec.rg[0].name
-  availability_set_id   = azurerm_availability_set.availability_set[each.value.component].id
+  availability_set_id   = each.value.availability_options == "availability_set" ? azurerm_availability_set.availability_set[each.value.component].id : null
+  zone                  = each.value.availability_options == "availability_zone" ? random_integer.integer[each.value.res_name].result : null
   network_interface_ids = [for i in values(azurerm_network_interface.network_interface) : i.id if length(regexall(each.key, i.id)) > 0]
   size                  = each.value.config.size
   computer_name         = lower(each.value.res_name)
@@ -173,8 +182,8 @@ resource "azurerm_virtual_machine_data_disk_attachment" "windows_virtual_machine
 
 # Manages a Windows Virtual Machine Extension to provide post deployment configuration and run automated tasks.
 resource "azurerm_virtual_machine_extension" "windows_virtual_machine_extension" {
-  for_each             = { for s in local.extension_flat : format("%s", s.name) => s if s.config.type == lower("windows") }
-  name                 = each.value.name
+  for_each             = { for s in local.extension_flat : format("%s-%s", s.res_name, s.name) => s if s.config.type == lower("windows") }
+  name                 = each.key
   virtual_machine_id   = azurerm_windows_virtual_machine.windows_virtual_machine[each.value.res_name].id
   publisher            = each.value.publisher
   type                 = each.value.type
@@ -194,23 +203,26 @@ resource "azurerm_backup_protected_vm" "windows_backup_protected_vm" {
 
 # Assigns a given Principal (User, Group or App) to a given Role for an Linux Virtual Machine..
 module "linux_role_assignment" {
-  count     = length(local.role_flat) > 0 ? 1 : 0
-  source    = "git::https://github.com/goldstrike77/terraform-module-azurerm.git//role-assignment?ref=v0.1"
+  count = length(local.role_flat) > 0 ? 1 : 0
+  #source    = "git::https://github.com/goldstrike77/terraform-module-azurerm.git//role-assignment?ref=v0.1"
+  source    = "/home/suzhetao/github/terraform/module/terraform-module-azurerm/role-assignment"
   role_spec = local.role_flat
   resource  = { for i, linux_virtual_machine in azurerm_linux_virtual_machine.linux_virtual_machine : i => linux_virtual_machine.id }
 }
 
 # Assigns a given Principal (User, Group or App) to a given Role for an Windows Virtual Machine..
 module "windows_role_assignment" {
-  count     = length(local.role_flat) > 0 ? 1 : 0
-  source    = "git::https://github.com/goldstrike77/terraform-module-azurerm.git//role-assignment?ref=v0.1"
+  count = length(local.role_flat) > 0 ? 1 : 0
+  #source    = "git::https://github.com/goldstrike77/terraform-module-azurerm.git//role-assignment?ref=v0.1"
+  source    = "/home/suzhetao/github/terraform/module/terraform-module-azurerm/role-assignment"
   role_spec = local.role_flat
   resource  = { for i, windows_virtual_machine in azurerm_windows_virtual_machine.windows_virtual_machine : i => windows_virtual_machine.id }
 }
 
 # Manages a Load Balancer Resource.
 module "lb" {
-  source     = "git::https://github.com/goldstrike77/terraform-module-azurerm.git//lb?ref=v0.1"
+  #source     = "git::https://github.com/goldstrike77/terraform-module-azurerm.git//lb?ref=v0.1"
+  source     = "/home/suzhetao/github/terraform/module/terraform-module-azurerm/lb"
   tags       = var.tags
   res_spec   = zipmap(["rg", "lb"], [var.res_spec.rg, var.res_spec.vm])
   depends_on = [azurerm_network_interface.network_interface]

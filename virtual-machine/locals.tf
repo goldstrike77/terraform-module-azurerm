@@ -3,12 +3,12 @@ locals {
   vm_flat = flatten([
     for s in var.res_spec.vm[*] : [
       for t in s.name : {
-        res_name  = t
-        zones           = lookup(s, "zones", [])
-        tags      = lookup(s, "tags", null)
-        component = s.component
-        location  = s.location
-        config    = s.config
+        res_name             = t
+        tags                 = lookup(s, "tags", null)
+        component            = s.component
+        location             = s.location
+        availability_options = s.availability_options
+        config               = s.config
       }
     ]
   ])
@@ -34,7 +34,6 @@ locals {
           res_rg          = var.res_spec.rg[0].name
           component       = s.component
           res_name        = t
-          zones           = lookup(s, "zones", [])
           location        = s.location
           tags            = s.tags
           ip_forwarding   = lookup(u, "ip_forwarding", false)
